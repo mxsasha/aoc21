@@ -1,17 +1,15 @@
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Lines};
 use std::process;
 
-fn main() {
+fn find_increases<B: BufRead>(lines: Lines<B>) -> Result<u32, String> {
     let mut increases_count = 0;
     let mut values: Vec<u32> = Vec::new();
 
-    let stdin = io::stdin();
-    for line in stdin.lock().lines() {
-        let current_depth = match line.as_ref().unwrap().parse::<u32>() {
+    for line in lines {
+        let current_depth = match line.as_ref().unwrap().replace(" ", "").parse::<u32>() {
             Ok(depth) => depth,
             Err(error) => {
-                eprintln!("Invalid input: '{}': {}", line.unwrap(), error);
-                process::exit(1);
+                return Err(format!("Invalid input: '{}': {}", line.unwrap(), error));
             }
         };
         values.push(current_depth);
@@ -25,5 +23,39 @@ fn main() {
             }
         }
     }
-    println!("Found {} increases", increases_count);
+    Ok(increases_count)
+}
+
+fn main() {
+    let stdin = io::stdin();
+    match find_increases(stdin.lock().lines()) {
+        Ok(increases_count) => println!("Found {} increases", increases_count),
+        Err(error) => {
+            eprintln!("{}", error);
+            process::exit(1);
+        }
+    };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::find_increases;
+    use std::io::{BufRead, Cursor};
+    #[test]
+    fn it_works() {
+        let lines = Cursor::new(String::from(
+            "199
+            200
+            208
+            210
+            200
+            207
+            240
+            269
+            260
+            263",
+        ));
+        let increases_count = find_increases(lines.lines()).unwrap();
+        assert_eq!(increases_count, 5);
+    }
 }
