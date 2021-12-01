@@ -3,7 +3,7 @@ use std::process;
 
 fn main() {
     let mut increases_count = 0;
-    let mut last_depth = None;
+    let mut values: Vec<u32> = Vec::new();
 
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
@@ -14,13 +14,16 @@ fn main() {
                 process::exit(1);
             }
         };
-        if let Some(l) = last_depth {
-            if l < current_depth {
+        values.push(current_depth);
+    }
+    if values.len() >= 3 {
+        for starting_idx in 0..values.len() - 3 {
+            let sum1: u32 = values[starting_idx..starting_idx + 3].iter().sum();
+            let sum2: u32 = values[starting_idx + 1..starting_idx + 4].iter().sum();
+            if sum2 > sum1 {
                 increases_count += 1;
             }
         }
-
-        last_depth = Some(current_depth);
     }
     println!("Found {} increases", increases_count);
 }
