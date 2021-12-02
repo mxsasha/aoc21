@@ -1,7 +1,7 @@
 use std::io::{self, BufRead, Lines};
 use std::process;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq)]
 struct Location {
     position: u32,
     depth: u32,
@@ -23,12 +23,8 @@ fn dive<B: BufRead>(lines: Lines<B>) -> Result<Location, String> {
 
         let parameter = match parameter_str.parse::<u32>() {
             Ok(parameter) => parameter,
-            Err(error) => {
-                return Err(format!(
-                    "Invalid input for parameter: '{}': {}",
-                    line.unwrap(),
-                    error
-                ));
+            Err(_error) => {
+                return Err(format!("Invalid input for parameter: '{}'", parameter_str,));
             }
         };
         match command {
@@ -76,5 +72,21 @@ mod tests {
         let location = dive(lines.lines()).unwrap();
         assert_eq!(location.position, 15);
         assert_eq!(location.depth, 60);
+    }
+    #[test]
+    fn invalid_command() {
+        let lines = Cursor::new(String::from("unknown 5"));
+        let result = dive(lines.lines());
+        assert_eq!(result, Err(String::from("Unknown command: unknown")));
+    }
+    #[test]
+
+    fn invalid_parameter() {
+        let lines = Cursor::new(String::from("forward invalid"));
+        let result = dive(lines.lines());
+        assert_eq!(
+            result,
+            Err(String::from("Invalid input for parameter: 'invalid'"))
+        );
     }
 }
