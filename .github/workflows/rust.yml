@@ -22,3 +22,9 @@ jobs:
     - name: Run tests sonar-sweep
       run: cargo test --verbose
       working-directory: sonar-sweep
+    - name: Build dive
+      run: cargo build --verbose
+      working-directory: dive
+    - name: Run tests dive
+      run: cargo test --verbose
+      working-directory: dive
