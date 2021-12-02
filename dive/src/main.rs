@@ -15,6 +15,7 @@ impl Location {
 
 fn dive<B: BufRead>(lines: Lines<B>) -> Result<Location, String> {
     let mut location = Location::new();
+    let mut aim = 0;
 
     for line in lines {
         let v: Vec<&str> = line.as_ref().unwrap().trim().split(' ').collect();
@@ -31,9 +32,12 @@ fn dive<B: BufRead>(lines: Lines<B>) -> Result<Location, String> {
             }
         };
         match command {
-            "forward" => location.position += parameter,
-            "down" => location.depth += parameter,
-            "up" => location.depth -= parameter,
+            "forward" => {
+                location.position += parameter;
+                location.depth += parameter * aim;
+            }
+            "down" => aim += parameter,
+            "up" => aim -= parameter,
             _ => return Err(format!("Unknown command: {}", command)),
         }
     }
@@ -71,6 +75,6 @@ mod tests {
         ));
         let location = dive(lines.lines()).unwrap();
         assert_eq!(location.position, 15);
-        assert_eq!(location.depth, 10);
+        assert_eq!(location.depth, 60);
     }
 }
