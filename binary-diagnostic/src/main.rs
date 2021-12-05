@@ -1,16 +1,20 @@
-use std::io::{self, BufRead, Lines};
+use std::io::{self, Read};
 use std::process;
-use math::round;
+use std::str::Lines;
 
 #[derive(Default, Debug, PartialEq)]
 struct Report {
-    gamma: isize,
-    epsilon: isize,
-    oxygen: isize,
-    co2: isize,
+    gamma: usize,
+    epsilon: usize,
+    oxygen: usize,
+    co2: usize,
 }
 
-fn determine_majorities(rows: &Vec<Vec<char>>, width: usize) -> Vec<usize> {
+enum LifeSupportMetric {
+    CO2,
+    Oxygen,
+}
+fn one_count_per_column(rows: &[Vec<char>], width: usize) -> Vec<usize> {
     let mut one_count = vec![0; width];
     for row in rows {
         for i in 0..width {
@@ -22,16 +26,55 @@ fn determine_majorities(rows: &Vec<Vec<char>>, width: usize) -> Vec<usize> {
     one_count
 }
 
-fn diagnose<B: BufRead>(lines: Lines<B>) -> Result<Report, String> {
-    let rows: Vec<Vec<char>> = lines
-        .map(|line| line.as_ref().unwrap().trim().chars().collect())
-        .collect();
+fn life_support_rating(rows: &[Vec<char>], width: usize, metric: LifeSupportMetric) -> usize {
+    let mut filtered_rows = rows.to_owned();
+    for idx in 0..width {
+        let filtered_one_count = one_count_per_column(&filtered_rows, width);
+        let majority_one =
+            filtered_one_count[idx] >= ((filtered_rows.len() as f64 / 2f64).ceil() as usize);
+        let filter_char = match metric {
+            LifeSupportMetric::CO2 => {
+                if majority_one {
+                    '0'
+                } else {
+                    '1'
+                }
+            }
+            LifeSupportMetric::Oxygen => {
+                if majority_one {
+                    '1'
+                } else {
+                    '0'
+                }
+            }
+        };
+        println!(
+            "about to filter {} rows for {} at {}",
+            filtered_rows.len(),
+            filter_char,
+            idx
+        );
+
+        filtered_rows = filtered_rows
+            .iter()
+            .filter(|row| row[idx] == filter_char)
+            .cloned()
+            .collect();
+        println!("remaning after filter {} rows", filtered_rows.len());
+        if filtered_rows.len() == 1 {
+            break;
+        }
+    }
+    let binary: String = filtered_rows[0].clone().into_iter().collect();
+    usize::from_str_radix(&binary, 2).unwrap()
+}
+
+fn diagnose(lines: Lines) -> Result<Report, String> {
+    let rows: Vec<Vec<char>> = lines.map(|line| line.trim().chars().collect()).collect();
     let width = rows[0].len();
     let height = rows.len();
-    // let flattened: Vec<char> = rows.into_iter().flatten().collect();
 
-    // let mut output: Vec<Vec<char>> = vec![vec![]; width];
-    let one_count = determine_majorities(&rows, width);
+    let one_count = one_count_per_column(&rows, width);
 
     let mut gamma_binary = String::new();
     let mut epsilon_binary = String::new();
@@ -47,51 +90,20 @@ fn diagnose<B: BufRead>(lines: Lines<B>) -> Result<Report, String> {
         }
     }
 
-    let mut filtered_rows = rows.clone();
-    for idx in 0..width {
-        let filtered_one_count = determine_majorities(&filtered_rows, width);
-        let majority_one = filtered_one_count[idx] >= (round::ceil(filtered_rows.len() as f64 / 2f64, 0) as usize);
-        let mut filter_char = '0';
-        if majority_one {
-            filter_char = '1';
-        }
-        filtered_rows = filtered_rows.iter().filter(|row| row[idx] == filter_char).cloned().collect();
-        if filtered_rows.len() == 1 {
-            break;
-        }
-    }
-    let oxygen_binary: String = filtered_rows[0].clone().into_iter().collect();
-    let oxygen = isize::from_str_radix(&oxygen_binary, 2).unwrap();
-
-    let mut filtered_rows = rows.clone();
-    for idx in 0..width {
-        let filtered_one_count = determine_majorities(&filtered_rows, width);
-        let majority_one = filtered_one_count[idx] >= (round::ceil(filtered_rows.len() as f64 / 2f64, 0) as usize);
-        let mut filter_char = '1';
-        if majority_one {
-            filter_char = '0';
-        }
-        filtered_rows = filtered_rows.iter().filter(|row| row[idx] == filter_char).cloned().collect();
-        if filtered_rows.len() == 1 {
-            break;
-        }
-    }
-    let co2_binary: String = filtered_rows[0].clone().into_iter().collect();
-    let co2 = isize::from_str_radix(&co2_binary, 2).unwrap();
-
-    let gamma = isize::from_str_radix(&gamma_binary, 2).unwrap();
-    let epsilon = isize::from_str_radix(&epsilon_binary, 2).unwrap();
+    let gamma = usize::from_str_radix(&gamma_binary, 2).unwrap();
+    let epsilon = usize::from_str_radix(&epsilon_binary, 2).unwrap();
     Ok(Report {
         gamma,
         epsilon,
-        co2,
-        oxygen,
+        co2: life_support_rating(&rows, width, LifeSupportMetric::CO2),
+        oxygen: life_support_rating(&rows, width, LifeSupportMetric::Oxygen),
     })
 }
 
 fn main() {
-    let stdin = io::stdin();
-    match diagnose(stdin.lock().lines()) {
+    let mut input = String::new();
+    io::stdin().lock().read_to_string(&mut input).unwrap();
+    match diagnose(input.lines()) {
         Ok(report) => println!(
             "Final report: {:?} - gamma*epsilon {} - oxygen*co2 {}",
             report,
@@ -108,10 +120,9 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::diagnose;
-    use std::io::{BufRead, Cursor};
     #[test]
     fn it_works() {
-        let lines = Cursor::new(String::from(
+        let lines = String::from(
             "00100
             11110
             10110
@@ -124,7 +135,7 @@ mod tests {
             11001
             00010
             01010",
-        ));
+        );
         let report = diagnose(lines.lines()).unwrap();
         assert_eq!(report.gamma, 22);
         assert_eq!(report.epsilon, 9);
