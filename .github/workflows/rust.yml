@@ -28,3 +28,9 @@ jobs:
     - name: Run tests dive
       run: cargo test --verbose
       working-directory: dive
+    - name: Build binary-diagnostic
+      run: cargo build --verbose
+      working-directory: binary-diagnostic
+    - name: Run tests binary-diagnostic
+      run: cargo test --verbose
+      working-directory: binary-diagnostic
