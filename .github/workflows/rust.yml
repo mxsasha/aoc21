@@ -34,3 +34,9 @@ jobs:
     - name: Run tests binary-diagnostic
       run: cargo test --verbose
       working-directory: binary-diagnostic
+    - name: Build bingo
+      run: cargo build --verbose
+      working-directory: bingo
+    - name: Run tests bingo
+      run: cargo test --verbose
+      working-directory: bingo
