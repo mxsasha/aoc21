@@ -1,18 +1,18 @@
 use std::cmp::{max, min};
+use std::collections::HashMap;
 use std::io::{self, Read};
 use std::iter::Iterator;
-use std::collections::HashMap;
 
 #[derive(Default, Debug, PartialEq, Clone, Copy, Hash, Eq)]
 struct Coordinate {
-    x: u32,
-    y: u32,
+    x: i32,
+    y: i32,
 }
 
 impl From<&str> for Coordinate {
     // 5,5
     fn from(input: &str) -> Self {
-        let elements: Vec<u32> = input
+        let elements: Vec<i32> = input
             .split(',')
             .map(|coord| coord.trim().parse().unwrap())
             .collect();
@@ -22,8 +22,8 @@ impl From<&str> for Coordinate {
         }
     }
 }
-impl PartialEq<(u32, u32)> for Coordinate {
-    fn eq(&self, other: &(u32, u32)) -> bool {
+impl PartialEq<(i32, i32)> for Coordinate {
+    fn eq(&self, other: &(i32, i32)) -> bool {
         (self.x, self.y) == *other
     }
 }
@@ -60,8 +60,19 @@ impl VentLine {
                 .collect();
         }
 
-        println!("Ignoring {:?} - not a straight line", self);
-        vec![]
+        let mut result = vec![];
+
+        let x_direction: i32 = if self.coord1.x > self.coord2.x { -1 } else { 1 };
+        let y_direction: i32 = if self.coord1.y > self.coord2.y { -1 } else { 1 };
+        let range = (self.coord1.x - self.coord2.x).abs();
+
+        for idx in 0..=range {
+            result.push(Coordinate {
+                x: self.coord1.x + (idx * x_direction),
+                y: self.coord1.y + (idx * y_direction),
+            });
+        }
+        result
     }
 }
 
@@ -94,7 +105,7 @@ mod tests {
         assert_eq!(vent_line.coord1.y, 5);
         assert_eq!(vent_line.coord2.x, 8);
         assert_eq!(vent_line.coord2.y, 2);
-        assert_eq!(vent_line.coords().len(), 0);
+        assert_eq!(vent_line.coords(), [(5, 5), (6, 4), (7, 3), (8, 2)]);
         assert_eq!(
             VentLine::from("5,5 -> 7,5").coords(),
             [(5, 5), (6, 5), (7, 5)]
@@ -120,6 +131,6 @@ mod tests {
 5,5 -> 8,2",
         );
         let count = calculate(&input);
-        assert_eq!(count, 5);
+        assert_eq!(count, 12);
     }
 }
