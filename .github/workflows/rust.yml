@@ -46,3 +46,9 @@ jobs:
     - name: Run tests hydrovent
       run: cargo test --verbose
       working-directory: hydrovent
+    - name: Build lanternfish
+      run: cargo build --verbose
+      working-directory: lanternfish
+    - name: Run tests lanternfish
+      run: cargo test --verbose
+      working-directory: lanternfish
