@@ -40,3 +40,9 @@ jobs:
     - name: Run tests bingo
       run: cargo test --verbose
       working-directory: bingo
+    - name: Build hydrovent
+      run: cargo build --verbose
+      working-directory: hydrovent
+    - name: Run tests hydrovent
+      run: cargo test --verbose
+      working-directory: hydrovent
