@@ -1,4 +1,4 @@
-use std::cmp::{max, min};
+use std::cmp::{max, Ordering};
 use std::collections::HashMap;
 use std::io::{self, Read};
 use std::iter::Iterator;
@@ -47,24 +47,22 @@ impl From<&str> for VentLine {
 
 impl VentLine {
     fn coords(&self) -> Vec<Coordinate> {
-        if self.coord1.y == self.coord2.y {
-            let y = self.coord1.y;
-            return (min(self.coord1.x, self.coord2.x)..max(self.coord1.x, self.coord2.x) + 1)
-                .map(|x| Coordinate { x, y })
-                .collect();
-        }
-        if self.coord1.x == self.coord2.x {
-            let x = self.coord1.x;
-            return (min(self.coord1.y, self.coord2.y)..max(self.coord1.y, self.coord2.y) + 1)
-                .map(|y| Coordinate { x, y })
-                .collect();
-        }
-
         let mut result = vec![];
+        let x_direction: i32 = match self.coord1.x.cmp(&self.coord2.x) {
+            Ordering::Equal => 0,
+            Ordering::Less => 1,
+            Ordering::Greater => -1,
+        };
+        let y_direction: i32 = match self.coord1.y.cmp(&self.coord2.y) {
+            Ordering::Equal => 0,
+            Ordering::Less => 1,
+            Ordering::Greater => -1,
+        };
 
-        let x_direction: i32 = if self.coord1.x > self.coord2.x { -1 } else { 1 };
-        let y_direction: i32 = if self.coord1.y > self.coord2.y { -1 } else { 1 };
-        let range = (self.coord1.x - self.coord2.x).abs();
+        let range = max(
+            (self.coord1.x - self.coord2.x).abs(),
+            (self.coord1.y - self.coord2.y).abs(),
+        );
 
         for idx in 0..=range {
             result.push(Coordinate {
@@ -112,7 +110,7 @@ mod tests {
         );
         assert_eq!(
             VentLine::from("5,7 -> 5,5").coords(),
-            [(5, 5), (5, 6), (5, 7)]
+            [(5, 7), (5, 6), (5, 5)]
         );
     }
 
