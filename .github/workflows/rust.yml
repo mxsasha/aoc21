@@ -52,3 +52,9 @@ jobs:
     - name: Run tests lanternfish
       run: cargo test --verbose
       working-directory: lanternfish
+    - name: Build whales
+      run: cargo build --verbose
+      working-directory: whales
+    - name: Run tests whales
+      run: cargo test --verbose
+      working-directory: whales
