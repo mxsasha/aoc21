@@ -58,3 +58,9 @@ jobs:
     - name: Run tests whales
       run: cargo test --verbose
       working-directory: whales
+    - name: Build seven-segment
+      run: cargo build --verbose
+      working-directory: seven-segment
+    - name: Run tests seven-segment
+      run: cargo test --verbose
+      working-directory: seven-segment
