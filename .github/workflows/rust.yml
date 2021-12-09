@@ -64,3 +64,9 @@ jobs:
     - name: Run tests seven-segment
       run: cargo test --verbose
       working-directory: seven-segment
+    - name: Build smokebasin
+      run: cargo build --verbose
+      working-directory: smokebasin
+    - name: Run tests smokebasin
+      run: cargo test --verbose
+      working-directory: smokebasin
