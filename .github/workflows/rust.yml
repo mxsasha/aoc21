@@ -70,3 +70,9 @@ jobs:
     - name: Run tests smokebasin
       run: cargo test --verbose
       working-directory: smokebasin
+    - name: Build syntax-scoring
+      run: cargo build --verbose
+      working-directory: syntax-scoring
+    - name: Run tests syntax-scoring
+      run: cargo test --verbose
+      working-directory: syntax-scoring
