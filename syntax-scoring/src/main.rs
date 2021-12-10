@@ -32,17 +32,17 @@ impl TryFrom<char> for Char {
 }
 
 impl CharType {
-    fn mismatch_score(&self) -> usize {
+    fn incomplete_score(&self) -> usize {
         match self {
-            CharType::AngleBracket => 25137,
-            CharType::Parenthesis => 3,
-            CharType::CurlyBrace => 1197,
-            CharType::SquareBracket => 57,
+            CharType::AngleBracket => 4,
+            CharType::Parenthesis => 1,
+            CharType::CurlyBrace => 3,
+            CharType::SquareBracket => 2,
         }
     }
 }
 
-fn process_line(line: &str) -> Option<CharType> {
+fn process_line(line: &str) -> Option<Vec<CharType>> {
     let mut symbol_stack: Vec<CharType> = vec![];
     let chars: Vec<Char> = line.chars().map(|c| Char::try_from(c).unwrap()).collect();
     for ch in chars {
@@ -50,22 +50,28 @@ fn process_line(line: &str) -> Option<CharType> {
             Char::Opening(char_type) => symbol_stack.push(char_type),
             Char::Closing(char_type) => {
                 if symbol_stack.pop().as_ref() != Some(&char_type) {
-                    return Some(char_type);
+                    return None;
                 }
             }
         };
     }
-    None
+    symbol_stack.reverse();
+    Some(symbol_stack)
 }
 
 fn calculate(input: &str) -> usize {
-    let mismatches: Vec<Option<CharType>> = input.trim().lines().map(process_line).collect();
-    println!("mismatches: {:?}", mismatches);
-    mismatches
-        .iter()
-        .flatten()
-        .map(|ct| ct.mismatch_score())
-        .sum()
+    let mut scores: Vec<usize> = input
+        .trim()
+        .lines()
+        .flat_map(process_line)
+        .map(|chars| {
+            chars
+                .iter()
+                .fold(0, |acc, char| (acc * 5) + char.incomplete_score())
+        })
+        .collect();
+    scores.sort_unstable();
+    scores[scores.len() / 2]
 }
 
 fn main() {
@@ -81,11 +87,6 @@ mod tests {
 
     #[test]
     fn test_calculate() {
-        assert_eq!(calculate("<[()]>"), 0);
-        assert_eq!(calculate(">"), 25137);
-        assert_eq!(calculate("[)"), 3);
-        assert_eq!(calculate("{{[)}}"), 3);
-
         let count = calculate(
             "
 [({(<(())[]>[[{[]{<()<>>
@@ -99,6 +100,6 @@ mod tests {
 <{([([[(<>()){}]>(<<{{
 <{([{{}}[<[[[<>{}]]]>[]]",
         );
-        assert_eq!(count, 26397);
+        assert_eq!(count, 288957);
     }
 }
