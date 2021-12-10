@@ -1,66 +1,43 @@
 use std::io::{self, Read};
 use std::iter::Iterator;
 
-#[derive(Debug, PartialEq, Clone, Copy, Hash, Eq)]
-struct Fish {
-    timer: usize,
-}
-
-impl From<&str> for Fish {
-    fn from(input: &str) -> Self {
-        Fish {
-            timer: input.trim().parse().unwrap(),
-        }
-    }
-}
-impl Default for Fish {
-    fn default() -> Self {
-        Fish { timer: 8 }
-    }
-}
-
 #[derive(Default, Debug, PartialEq, Clone, Hash, Eq)]
 struct School {
-    fishes: Vec<Fish>,
-}
-
-impl Fish {
-    fn advance_day_check_spawn(&mut self) -> bool {
-        if self.timer == 0 {
-            self.timer = 6;
-            return true;
-        }
-        self.timer -= 1;
-        false
-    }
+    fish_per_count: [u128; 9],
 }
 
 impl From<&str> for School {
     fn from(input: &str) -> Self {
-        let fishes: Vec<Fish> = input.trim().split(',').map(Fish::from).collect();
-        School { fishes }
+        let mut school = School::zero();
+        input
+            .trim()
+            .split(',')
+            .map(|c| c.parse().unwrap())
+            .for_each(|counter: usize| school.fish_per_count[counter] += 1);
+        school
     }
 }
 
 impl School {
-    fn size(&self) -> usize {
-        self.fishes.len()
-    }
-    fn _timers(&self) -> Vec<usize> {
-        self.fishes.iter().map(|f| f.timer).collect()
+    fn zero() -> Self {
+        School {
+            fish_per_count: [0; 9],
+        }
     }
     fn advance_day(&mut self) {
-        let mut new_fishes: Vec<Fish> = vec![];
-        for fish in &mut self.fishes {
-            if fish.advance_day_check_spawn() {
-                new_fishes.push(Fish::default());
-            }
+        let spawning_fish = self.fish_per_count[0];
+        for idx in 1..=8 {
+            self.fish_per_count[idx - 1] = self.fish_per_count[idx];
         }
-        self.fishes.append(&mut new_fishes);
+        self.fish_per_count[6] += spawning_fish;
+        self.fish_per_count[8] = spawning_fish;
+    }
+    fn size(&self) -> u128 {
+        self.fish_per_count.iter().sum()
     }
 }
 
-fn calculate(input: &str, days: usize) -> usize {
+fn calculate(input: &str, days: usize) -> u128 {
     let mut school = School::from(input);
     for day in 0..days {
         println!("starting day {} with {} fish", day, school.size());
@@ -78,21 +55,7 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::{calculate, School};
-
-    #[test]
-    fn test_school() {
-        let content = "3,4,3,1,2";
-        let mut school = School::from(content);
-        assert_eq!(school.size(), 5);
-        assert_eq!(school._timers(), [3, 4, 3, 1, 2]);
-        school.advance_day();
-        assert_eq!(school.size(), 5);
-        assert_eq!(school._timers(), [2, 3, 2, 0, 1]);
-        school.advance_day();
-        assert_eq!(school.size(), 6);
-        assert_eq!(school._timers(), [1, 2, 1, 6, 0, 8]);
-    }
+    use super::calculate;
 
     #[test]
     fn test_calculate() {
