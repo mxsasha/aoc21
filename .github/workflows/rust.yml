@@ -76,3 +76,9 @@ jobs:
     - name: Run tests syntax-scoring
       run: cargo test --verbose
       working-directory: syntax-scoring
+    - name: Build octopus
+      run: cargo build --verbose
+      working-directory: octopus
+    - name: Run tests octopus
+      run: cargo test --verbose
+      working-directory: octopus
