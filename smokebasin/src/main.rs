@@ -1,30 +1,15 @@
 use std::io::{self, Read};
 
 #[derive(Debug, PartialEq, Clone, Hash, Eq)]
-struct HeightPoint {
-    height: u32,
-    left: Option<u32>,
-    right: Option<u32>,
-    above: Option<u32>,
-    below: Option<u32>,
-}
-
-impl HeightPoint {
-    fn is_low(&self) -> bool {
-        [self.left, self.right, self.above, self.below]
-            .into_iter()
-            .flatten()
-            .all(|value| value > self.height)
-    }
-}
-#[derive(Debug, PartialEq, Clone, Hash, Eq)]
 struct HeightMap {
     points: Vec<Vec<u32>>,
+    basin_assignments: Vec<Vec<u32>>,
 }
 
 impl From<&str> for HeightMap {
     fn from(input: &str) -> Self {
         HeightMap {
+            basin_assignments: vec![],
             points: input
                 .trim()
                 .lines()
@@ -40,53 +25,45 @@ impl From<&str> for HeightMap {
 }
 
 impl HeightMap {
-    fn width(&self) -> usize {
-        self.points[0].len()
+    fn size(&self) -> (usize, usize) {
+        (self.points[0].len(), self.points.len())
     }
-    fn height(&self) -> usize {
-        self.points.len()
-    }
-    fn height_point(&self, x: usize, y: usize) -> HeightPoint {
-        let left = if x >= 1 {
-            self.get_height(x - 1, y)
-        } else {
-            None
-        };
-        let above = if y >= 1 {
-            self.get_height(x, y - 1)
-        } else {
-            None
-        };
-        HeightPoint {
-            height: self.get_height(x, y).unwrap(),
-            right: self.get_height(x + 1, y),
-            below: self.get_height(x, y + 1),
-            left,
-            above,
+    fn is_low(&self, x: usize, y: usize) -> bool {
+        let mut is_low = true;
+        let (len_x, len_y) = self.size();
+        if x > 0 && self.points[y][x - 1] < self.points[y][x] {
+            is_low = false;
         }
-    }
-    fn get_height(&self, x: usize, y: usize) -> Option<u32> {
-        if let Some(row) = self.points.get(y) {
-            if let Some(point) = row.get(x) {
-                return Some(*point);
-            }
+        if y > 0 && self.points[y - 1][x] < self.points[y][x] {
+            is_low = false;
         }
-        None
+        if x < len_x - 1 && self.points[y][x + 1] < self.points[y][x] {
+            is_low = false;
+        }
+        if y < len_y - 1 && self.points[y + 1][x] < self.points[y][x] {
+            is_low = false;
+        }
+
+        is_low
+    }
+    fn get(&self, x: usize, y: usize) -> u32 {
+        self.points[y][x]
     }
 }
 
 fn calculate(input: &str) -> u32 {
     let heightmap = HeightMap::from(input);
-    let mut count = 0;
-    for y in 0..heightmap.height() {
-        for x in 0..heightmap.width() {
-            let point = heightmap.height_point(x, y);
-            if point.is_low() {
-                count += 1 + point.height;
+    let mut low_point_score = 0;
+    let (len_x, len_y) = heightmap.size();
+
+    for x in 0..len_x {
+        for y in 0..len_y {
+            if heightmap.is_low(x, y) {
+                low_point_score += heightmap.get(x, y) + 1;
             }
         }
     }
-    count
+    low_point_score
 }
 
 fn main() {
