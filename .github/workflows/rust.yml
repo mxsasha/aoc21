@@ -82,3 +82,9 @@ jobs:
     - name: Run tests octopus
       run: cargo test --verbose
       working-directory: octopus
+    - name: Build passage
+      run: cargo build --verbose
+      working-directory: passage
+    - name: Run tests passage
+      run: cargo test --verbose
+      working-directory: passage
