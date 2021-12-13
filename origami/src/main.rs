@@ -1,4 +1,7 @@
-use std::{io::{self, Read}, fmt};
+use std::{
+    fmt,
+    io::{self, Read},
+};
 
 #[derive(Debug)]
 enum Fold {
@@ -79,21 +82,48 @@ impl Paper {
         if let Fold::Y(fold_size) = fold {
             let y_size1 = *fold_size;
             let y_size2 = self.y_size - fold_size - 1;
-            let y_size_new = y_size1.max(y_size2);
-            let y_offset1 = y_size_new - y_size1;
-            let y_offset2 = y_size_new - y_size2;
-            let mut points_vec = vec![vec![false; y_size_new]; self.x_size];
+            self.y_size = y_size1.max(y_size2);
+            let y_offset1 = self.y_size - y_size1;
+            let y_offset2 = self.y_size - y_size2;
+
+            let mut points_vec = vec![vec![false; self.y_size]; self.x_size];
             for (x, column) in self.points.iter().enumerate() {
                 let (column1, column2) = column.split_at(*fold_size + 1);
                 for (y, value) in column1.iter().take(y_size1).enumerate() {
                     points_vec[x][y + y_offset1] = *value;
                 }
-                for (y, value) in column2.iter().rev().enumerate().filter(|(_y, value)| **value) {
+                for (y, value) in column2
+                    .iter()
+                    .rev()
+                    .enumerate()
+                    .filter(|(_y, value)| **value)
+                {
                     points_vec[x][y + y_offset2] = *value;
                 }
             }
             self.points = points_vec;
-            self.y_size = y_size_new;
+        }
+        if let Fold::X(fold_size) = fold {
+            let x_size1 = *fold_size;
+            let x_size2 = self.x_size - fold_size - 1;
+            self.x_size = x_size1.max(x_size2);
+            let x_offset1 = self.x_size - x_size1;
+            let x_offset2 = self.x_size - x_size2;
+
+            let mut points_vec = vec![vec![false; self.y_size]; self.x_size];
+            let (left, right) = self.points.split_at(*fold_size + 1);
+
+            for (x, column) in left.iter().take(x_size1).enumerate() {
+                for (y, value) in column.iter().enumerate() {
+                    points_vec[x + x_offset1][y] = *value;
+                }
+            }
+            for (x, column) in right.iter().rev().enumerate() {
+                for (y, value) in column.iter().enumerate().filter(|(_y, value)| **value) {
+                    points_vec[x + x_offset2][y] = *value;
+                }
+            }
+            self.points = points_vec;
         }
     }
 }
@@ -102,11 +132,17 @@ fn calculate(input: &str) -> usize {
     let (points_str, folds_str) = (parts.next().unwrap(), parts.next().unwrap());
     let mut paper = Paper::new(points_str);
     let folds: Vec<Fold> = folds_str.lines().map(Fold::new).collect();
-    println!("Initial:\n===\n{}\n===", paper);
-    paper.fold(&folds[0]);
-    println!("After fold 0:\n===\n{}\n===", paper);
+    // println!("Initial:\n===\n{}\n===", paper);
 
-    paper.count_points()
+    paper.fold(&folds[0]);
+    let count = paper.count_points();
+
+    for fold in folds.iter().skip(1) {
+        paper.fold(fold);
+    }
+    println!("End:\n===\n{}\n===", paper);
+
+    count
 }
 
 fn main() {
