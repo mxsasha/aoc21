@@ -88,3 +88,9 @@ jobs:
     - name: Run tests passage
       run: cargo test --verbose
       working-directory: passage
+    - name: Build origami
+      run: cargo build --verbose
+      working-directory: origami
+    - name: Run tests origami
+      run: cargo test --verbose
+      working-directory: origami
