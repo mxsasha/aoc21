@@ -94,3 +94,9 @@ jobs:
     - name: Run tests origami
       run: cargo test --verbose
       working-directory: origami
+    - name: Build polymerization
+      run: cargo build --verbose
+      working-directory: polymerization
+    - name: Run tests polymerization
+      run: cargo test --verbose
+      working-directory: polymerization

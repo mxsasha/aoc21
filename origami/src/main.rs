@@ -133,6 +133,7 @@ fn calculate(input: &str) -> usize {
     let mut paper = Paper::new(points_str);
     let folds: Vec<Fold> = folds_str.lines().map(Fold::new).collect();
     // println!("Initial:\n===\n{}\n===", paper);
+    println!("Loaded initial at {}x{}", paper.x_size, paper.y_size);
 
     paper.fold(&folds[0]);
     let count = paper.count_points();
