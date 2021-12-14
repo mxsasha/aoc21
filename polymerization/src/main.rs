@@ -1,25 +1,23 @@
 use std::{
     collections::HashMap,
-    fmt,
     io::{self, Read},
 };
-use counter::Counter;
 
 struct Polymer {
-    template: Vec<char>,
+    pair_counts: HashMap<(char, char), usize>,
     rules: HashMap<(char, char), char>,
-}
-
-impl fmt::Display for Polymer {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.template.iter().collect::<String>())
-    }
 }
 
 impl Polymer {
     fn new(input: &str) -> Self {
         let parts: Vec<&str> = input.trim().split("\n\n").collect();
-        let template = parts[0].chars().collect();
+
+        let mut pair_counts = HashMap::new();
+        let initial: Vec<char> = parts[0].chars().collect();
+        for idx_first in 0..initial.len() - 1 {
+            let pair = (initial[idx_first], initial[idx_first + 1]);
+            *pair_counts.entry(pair).or_default() += 1
+        }
 
         let mut rules = HashMap::new();
         parts[1].lines().for_each(|rule| {
@@ -27,35 +25,46 @@ impl Polymer {
             rules.insert((chars[0], chars[1]), chars[6]);
         });
 
-        Polymer { template, rules }
+        Polymer { pair_counts, rules }
     }
     fn step(&mut self) {
-        let mut new_template = vec![];
-        for idx_first in 0..self.template.len()-1 {
-            let pair = (self.template[idx_first], self.template[idx_first + 1]);
-            let mut insertion = match self.rules.get(&pair) {
-                Some(insertion) => vec![pair.0, *insertion, pair.1],
-                None => vec![pair.0, pair.1],
+        let mut new_pair_counts = HashMap::new();
+
+        for (&existing_pair, &count) in self.pair_counts.iter() {
+            let new_pairs = match self.rules.get(&existing_pair) {
+                Some(insertion) => {
+                    vec![(existing_pair.0, *insertion), (*insertion, existing_pair.1)]
+                }
+                None => vec![(existing_pair.0, existing_pair.1)],
             };
-            if idx_first != 0 {
-                insertion.remove(0);
+            for pair in new_pairs {
+                *new_pair_counts.entry(pair).or_default() += count;
             }
-            new_template.extend(insertion);
         }
-        self.template = new_template;
+        self.pair_counts = new_pair_counts;
+    }
+    fn char_counts(&self) -> Vec<(char, usize)> {
+        let mut char_counts = HashMap::new();
+        for (idx, (&pair, &count)) in self.pair_counts.iter().enumerate() {
+            if idx == 0 {
+                *char_counts.entry(pair.0).or_default() += count;
+            }
+            *char_counts.entry(pair.1).or_default() += count;
+        }
+        let mut counts_vec: Vec<(char, usize)> = char_counts.into_iter().collect();
+        counts_vec.sort_by(|a, b| b.1.cmp(&a.1));
+        counts_vec
     }
 }
 
 fn calculate(input: &str) -> usize {
     let mut polymer = Polymer::new(input);
-    for step in 0..10 {
-        println!("polymer at step {}: {}", step, polymer);
+    for _step in 0..10 {
         polymer.step();
     }
-    let char_counts = polymer.to_string().chars().collect::<Counter<_>>().most_common_ordered();
+    let char_counts = polymer.char_counts();
     let most_common_count = char_counts.first().unwrap().1;
     let least_common_count = char_counts.last().unwrap().1;
-
     most_common_count - least_common_count
 }
 
