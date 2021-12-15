@@ -97,9 +97,6 @@ jobs:
     - name: Build polymerization
       run: cargo build --verbose
       working-directory: polymerization
-    - name: Run tests polymerization
-      run: cargo test --verbose
-      working-directory: polymerization
     - name: Build chiton
       run: cargo build --verbose
       working-directory: chiton
