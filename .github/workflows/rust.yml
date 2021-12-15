@@ -100,3 +100,9 @@ jobs:
     - name: Run tests polymerization
       run: cargo test --verbose
       working-directory: polymerization
+    - name: Build chiton
+      run: cargo build --verbose
+      working-directory: chiton
+    - name: Run tests chiton
+      run: cargo test --verbose
+      working-directory: chiton
