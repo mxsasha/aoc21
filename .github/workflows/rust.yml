@@ -103,3 +103,9 @@ jobs:
     - name: Run tests chiton
       run: cargo test --verbose
       working-directory: chiton
+    - name: Build packet
+      run: cargo build --verbose
+      working-directory: packet
+    - name: Run tests packet
+      run: cargo test --verbose
+      working-directory: packet
