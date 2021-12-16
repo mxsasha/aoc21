@@ -8,8 +8,8 @@ enum LengthType {
 #[derive(Debug)]
 struct OperatorPacket {
     version: usize,
-    length: LengthType,
     length_bits: usize,
+    packet_type: usize,
     subpackets: Vec<Packet>,
 }
 
@@ -65,9 +65,40 @@ impl OperatorPacket {
         }
         OperatorPacket {
             version,
-            length,
             subpackets,
+            packet_type,
             length_bits: my_length,
+        }
+    }
+    fn value(&self) -> usize {
+        let mut value_iter = self.subpackets.iter().map(|sp| sp.value());
+        match self.packet_type {
+            0 => value_iter.sum(),
+            1 => value_iter.product(),
+            2 => value_iter.min().unwrap(),
+            3 => value_iter.max().unwrap(),
+            5 => {
+                if value_iter.next().unwrap() > value_iter.next().unwrap() {
+                    1
+                } else {
+                    0
+                }
+            }
+            6 => {
+                if value_iter.next().unwrap() < value_iter.next().unwrap() {
+                    1
+                } else {
+                    0
+                }
+            }
+            7 => {
+                if value_iter.next().unwrap() == value_iter.next().unwrap() {
+                    1
+                } else {
+                    0
+                }
+            }
+            _ => panic!("Unknown packet type {}", self.packet_type),
         }
     }
 }
@@ -115,6 +146,13 @@ impl Packet {
         }
         start
     }
+
+    fn value(&self) -> usize {
+        match self {
+            Packet::Operator(operator_subpacket) => operator_subpacket.value(),
+            Packet::Literal(literal_subpacket) => literal_subpacket.value,
+        }
+    }
 }
 
 fn binstr_to_usize(binstr: String) -> usize {
@@ -147,30 +185,50 @@ fn char_to_binstr(c: char) -> &'static str {
     }
 }
 
-fn calculate(input: &str) -> usize {
+fn version_sum(input: &str) -> usize {
     let packet = Packet::new(&mut hex_to_binstr(input.trim()));
     println!("{:?}", packet);
     packet.version_sum()
 }
 
+fn packet_value(input: &str) -> usize {
+    let packet = Packet::new(&mut hex_to_binstr(input.trim()));
+    println!("{:?}", packet);
+    packet.value()
+}
+
 fn main() {
     let mut input = String::new();
     io::stdin().lock().read_to_string(&mut input).unwrap();
-    let score = calculate(&input);
+    let score = version_sum(&input);
+    println!("result: {:?}", score);
+    let score = packet_value(&input);
     println!("result: {:?}", score);
 }
 
 #[cfg(test)]
 mod tests {
-    use super::calculate;
+    use super::{packet_value, version_sum};
 
     #[test]
-    fn test_calculate() {
-        assert_eq!(calculate("38006F45291200"), 9);
-        assert_eq!(calculate("EE00D40C823060"), 14);
-        assert_eq!(calculate("8A004A801A8002F478"), 16);
-        assert_eq!(calculate("620080001611562C8802118E34"), 12);
-        assert_eq!(calculate("C0015000016115A2E0802F182340"), 23);
-        assert_eq!(calculate("A0016C880162017C3686B18A3D4780"), 31);
+    fn test_version_sum() {
+        assert_eq!(version_sum("38006F45291200"), 9);
+        assert_eq!(version_sum("EE00D40C823060"), 14);
+        assert_eq!(version_sum("8A004A801A8002F478"), 16);
+        assert_eq!(version_sum("620080001611562C8802118E34"), 12);
+        assert_eq!(version_sum("C0015000016115A2E0802F182340"), 23);
+        assert_eq!(version_sum("A0016C880162017C3686B18A3D4780"), 31);
+    }
+
+    #[test]
+    fn test_packet_value() {
+        assert_eq!(packet_value("C200B40A82"), 3);
+        assert_eq!(packet_value("04005AC33890"), 54);
+        assert_eq!(packet_value("880086C3E88112"), 7);
+        assert_eq!(packet_value("CE00C43D881120"), 9);
+        assert_eq!(packet_value("D8005AC2A8F0"), 1);
+        assert_eq!(packet_value("F600BC2D8F"), 0);
+        assert_eq!(packet_value("9C005AC2F8F0"), 0);
+        assert_eq!(packet_value("9C0141080250320F1802104A08"), 1);
     }
 }
